@@ -1,0 +1,5 @@
+{
+  "name": "NeuroLFP Agent",
+  "description": "A professional-grade Local Field Potential (LFP) signal analysis agent for BCI and epilepsy research. Features standard preprocessing pipelines, spectral analysis, and AI-assisted interpretation.",
+  "requestFramePermissions": []
+}
