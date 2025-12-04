@@ -1,12 +1,15 @@
 import React from 'react';
-import { AnalysisStep } from '../types';
+import { AnalysisStep, SignalConfig } from '../types';
 
 interface SidebarProps {
   currentStep: AnalysisStep;
   setStep: (step: AnalysisStep) => void;
+  dataSource: 'simulated' | 'local';
+  config: SignalConfig;
+  channelStats: { total: number; active: number };
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentStep, setStep }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentStep, setStep, dataSource, config, channelStats }) => {
   const steps = Object.values(AnalysisStep);
 
   return (
@@ -45,15 +48,35 @@ const Sidebar: React.FC<SidebarProps> = ({ currentStep, setStep }) => {
         })}
       </nav>
 
-      <div className="p-4 bg-gray-900/50">
-        <div className="bg-gray-800 rounded p-3 text-xs text-gray-400 border border-gray-700">
-          <p className="font-semibold text-gray-300 mb-1">Status</p>
-          <div className="flex items-center gap-2">
-             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-             <span>System Ready</span>
+      <div className="p-4 bg-gray-900/50 border-t border-gray-800">
+        <div className="bg-gray-800 rounded p-3 text-xs text-gray-400 border border-gray-700 space-y-2">
+          <div className="flex justify-between items-center border-b border-gray-700 pb-2 mb-2">
+             <span className="font-semibold text-gray-300">System Status</span>
+             <span className="flex items-center gap-1 text-[10px]">
+               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+               Ready
+             </span>
           </div>
-          <div className="mt-2 pt-2 border-t border-gray-700">
-             Data Source: <span className="text-blue-400">Simulation</span>
+          
+          <div className="grid grid-cols-2 gap-y-1 gap-x-2">
+             <span className="text-gray-500">Source:</span>
+             <span className={`font-medium ${dataSource === 'local' ? 'text-blue-400' : 'text-purple-400'}`}>
+               {dataSource === 'local' ? 'Local EDF' : 'Simulation'}
+             </span>
+
+             <span className="text-gray-500">Channels:</span>
+             <span className="text-gray-200">{channelStats.active} / {channelStats.total}</span>
+
+             <span className="text-gray-500">Rate:</span>
+             <span className="text-gray-200">{config.sampleRate} Hz</span>
+
+             <span className="text-gray-500">Ref:</span>
+             <span className="text-gray-200 truncate" title={config.reference}>{config.reference}</span>
+
+             <span className="text-gray-500">Notch:</span>
+             <span className={`${config.notchFilter > 0 ? 'text-green-400' : 'text-gray-500'}`}>
+               {config.notchFilter > 0 ? `${config.notchFilter}Hz` : 'OFF'}
+             </span>
           </div>
         </div>
       </div>
