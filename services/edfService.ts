@@ -19,13 +19,17 @@ export const parseEDF = async (file: File): Promise<ChannelData[]> => {
         // 1. Parse Fixed Header
         // 0-7: Version (should be '0')
         // 184-191: Bytes in header
-        const headerBytes = parseInt(readString(184, 8));
+        const headerBytes = parseInt(readString(184, 8), 10);
         // 236-243: Number of Data Records
-        let numRecords = parseInt(readString(236, 8));
+        let numRecords = parseInt(readString(236, 8), 10);
         // 244-251: Duration of a Data Record (seconds)
         const recordDuration = parseFloat(readString(244, 8));
         // 252-255: Number of Signals (ns)
-        const numSignals = parseInt(readString(252, 4));
+        const numSignals = parseInt(readString(252, 4), 10);
+
+        if (!Number.isFinite(headerBytes) || !Number.isFinite(numSignals) || numSignals <= 0) {
+          throw new Error("Invalid EDF header.");
+        }
 
         if (numRecords === -1) {
              // If unknown, estimate from file size
@@ -65,7 +69,7 @@ export const parseEDF = async (file: File): Promise<ChannelData[]> => {
           physMaxs.push(parseFloat(readString(physMaxOffset + i * 8, 8)));
           digMins.push(parseFloat(readString(digMinOffset + i * 8, 8)));
           digMaxs.push(parseFloat(readString(digMaxOffset + i * 8, 8)));
-          samplesPerRecord.push(parseInt(readString(samplesOffset + i * 8, 8)));
+          samplesPerRecord.push(parseInt(readString(samplesOffset + i * 8, 8), 10));
         }
 
         // Pre-calculate Gain and Offset for conversion
@@ -75,9 +79,11 @@ export const parseEDF = async (file: File): Promise<ChannelData[]> => {
         for (let i = 0; i < numSignals; i++) {
           const physRange = physMaxs[i] - physMins[i];
           const digRange = digMaxs[i] - digMins[i];
-          const gain = physRange / digRange;
-          gains.push(gain);
-          offsets.push(physMins[i] - gain * digMins[i]);
+          const gain = Number.isFinite(digRange) && digRange !== 0 ? physRange / digRange : 1;
+          gains.push(Number.isFinite(gain) ? gain : 1);
+          offsets.push(
+            Number.isFinite(physMins[i]) && Number.isFinite(digMins[i]) ? physMins[i] - gain * digMins[i] : 0
+          );
         }
 
         // Initialize Channels
@@ -95,6 +101,9 @@ export const parseEDF = async (file: File): Promise<ChannelData[]> => {
         if (numRecords <= 0) {
             let bytesPerRecord = 0;
             for(let s=0; s<numSignals; s++) bytesPerRecord += samplesPerRecord[s] * 2;
+            if (bytesPerRecord <= 0) {
+              throw new Error("Invalid EDF sample information.");
+            }
             numRecords = Math.floor((buffer.byteLength - headerBytes) / bytesPerRecord);
         }
 

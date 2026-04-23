@@ -54,9 +54,9 @@ const App: React.FC = () => {
       } else {
         throw new Error("Unsupported file format. Please use .edf");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setErrorMsg(err.message || "Failed to load file");
+      setErrorMsg(err instanceof Error ? err.message : "Failed to load file");
       setDataMode('simulated');
     } finally {
       setIsLoading(false);
