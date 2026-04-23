@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage, AnalysisStep } from '../types';
-import { sendMessageToGemini } from '../services/geminiService';
+import { sendMessageToLLM, getActiveLLMInfo } from '../services/llmService';
 
 interface AgentSidebarProps {
   currentStep: AnalysisStep;
-  contextData: any; // Data summary to send to agent
+  contextData: Record<string, unknown>; // Data summary to send to agent
 }
 
 const AgentSidebar: React.FC<AgentSidebarProps> = ({ currentStep, contextData }) => {
+  const llmInfo = getActiveLLMInfo();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'model',
@@ -39,7 +40,7 @@ const AgentSidebar: React.FC<AgentSidebarProps> = ({ currentStep, contextData })
       Data Summary: ${JSON.stringify(contextData, null, 2)}
     `;
 
-    const responseText = await sendMessageToGemini(input, contextString);
+    const responseText = await sendMessageToLLM(input, contextString);
 
     const botMsg: ChatMessage = { role: 'model', content: responseText, timestamp: new Date() };
     setMessages(prev => [...prev, botMsg]);
@@ -59,7 +60,7 @@ const AgentSidebar: React.FC<AgentSidebarProps> = ({ currentStep, contextData })
         <h2 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
           AI Analyst
         </h2>
-        <p className="text-xs text-gray-500">Powered by Gemini 2.5 Flash</p>
+        <p className="text-xs text-gray-500">Powered by {llmInfo.provider} · {llmInfo.model}</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
